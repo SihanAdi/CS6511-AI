@@ -121,9 +121,9 @@ public class Main {
 
             LinkedList<HashMap<Integer, Integer>> var_x = new LinkedList<HashMap<Integer, Integer>>();
             //the index of list var_x represents the kind of tiles,
-            // i = 0 ->El,
+            // i = 2 ->El,
             // i = 1 -> outer boundary,
-            // i = 2 -> full_block
+            // i = 0 -> full_block
 
             int number_1 = 0;
             int number_2 = 0;
@@ -573,8 +573,10 @@ public class Main {
             //LCV
             //The order in which the values of the variables are chosen,
             //with preference given to the values that leave neighbors with more choices.
-            //In this problem, that is to choose the value with the least number of targets.
+            //In this problem, that is to choose the value with the least number of targets
+            // and the one with the largest remaining number of tiles.
             int min_val = 17;//4*4 grid
+//            int max_val = 0;
             int index_val = -1;
 
 
@@ -623,9 +625,42 @@ public class Main {
 
                 }
                 if (sum < min_val){
-                    min_val = sum;
-                    index_val = i;
+                    if (index_val != -1){
+                        int tmp_index_val = -1;
+                        int tmp_i = -1;
+                        if (value_list.get(index_val).get(5) == 1){
+                            tmp_index_val = tiles.get("OUTER_BOUNDARY") - tmp_tiles.get("OUTER_BOUNDARY");
+                        }
+                        else if (value_list.get(index_val).get(5) == 2){
+                            tmp_index_val = tiles.get("EL_SHAPE") - tmp_tiles.get("EL_SHAPE");
+                        }
+                        else if (value_list.get(index_val).get(5) == 0){
+                            tmp_index_val = tiles.get("FULL_BLOCK") - tmp_tiles.get("FULL_BLOCK");
+                        }
+
+                        if (value_list.get(i).get(5) == 1){
+                            tmp_i = tiles.get("OUTER_BOUNDARY") - tmp_tiles.get("OUTER_BOUNDARY");
+                        }
+                        else if (value_list.get(i).get(5) == 2){
+                            tmp_i = tiles.get("EL_SHAPE") - tmp_tiles.get("EL_SHAPE");
+                        }
+                        else if (value_list.get(i).get(5) == 0){
+                            tmp_i = tiles.get("FULL_BLOCK") - tmp_tiles.get("FULL_BLOCK");
+                        }
+                        if (tmp_i >= tmp_index_val){
+                            min_val = sum;
+                            index_val = i;
+                        }
+                    }else{
+                        min_val = sum;
+                        index_val = i;
+                    }
+
                 }
+//                if (sum > max_val){
+//                    max_val = sum;
+//                    index_val = i;
+//                }
             }
             if (index_val == -1){
                 return assignment;
@@ -682,6 +717,7 @@ public class Main {
                         System.out.println(index_var + "FULL_BLOCK");
 
                     }
+                    System.out.println(var.get(index_var).get(index_val));
                     return true;
                 }
             }
