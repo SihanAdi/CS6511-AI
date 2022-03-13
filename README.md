@@ -6,4 +6,4 @@ In the backtracking function, determine whether the goal has been completed and 
 Then call the AC3 function, generate the arc queue, and then make a constraint judgment on the entire queue. For example, if the value of the variable x does not meet the constraints in the value range of the variable y, delete the value of the variable x. On the other hand, if x changes the range, then add all (k, x) to the queue.
 If the return value of the AC3 function is true, then the backtracking function is called recursively. If it is false, the state is restored, and the next value of the variable is tried.
    
-![image](https://user-images.githubusercontent.com/90162859/158077819-5d17c815-ac4b-4204-8a53-7e026e98c269.png)
+![image](https://user-images.githubusercontent.com/90162859/158077830-93d84489-cf4a-4254-9595-7418ba8ec737.png)
