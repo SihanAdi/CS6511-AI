@@ -1403,4 +1403,83 @@ class MainTest {
         assertEquals(true, assignment);
     }
 
+    @Test
+    void runtest19() throws IOException {
+        int[][] landscape = null;
+        HashMap<String, Integer> tiles = new HashMap<>();
+        HashMap<Integer, Integer> targets = new HashMap<>();
+        BufferedReader ls = new BufferedReader(new FileReader("/Users/adisihansun/IdeaProjects/AI_CSP_Tile_Placement/src/test/Tile_Placement/Landscapes19"));
+        BufferedReader til = new BufferedReader(new FileReader("/Users/adisihansun/IdeaProjects/AI_CSP_Tile_Placement/src/test/Tile_Placement/Tiles19"));
+        BufferedReader tar = new BufferedReader(new FileReader("/Users/adisihansun/IdeaProjects/AI_CSP_Tile_Placement/src/test/Tile_Placement/Targets19"));
+        String til_str, tar_str, ls_row;
+
+        //input landscape
+        LinkedList<String> ls_list = new LinkedList<>();
+        while ((ls_row = ls.readLine()) != null){
+            ls_list.add(ls_row);//get each of rows
+        }
+        String s = ls_list.get(0);
+        int col = 0;
+        if (s.length() > 20){
+            col = 20;
+        }else{
+            col = 10;
+        }
+        landscape = new int[ls_list.size()][col];
+        int count = 0;
+        for (String str : ls_list){
+
+            int i = 0;
+            int index;
+            for (i = 0, index = 0; i < col && index < str.length(); i++, index += 2){
+                if (str.charAt(index) != ' '){
+                    landscape[count][i] = Integer.valueOf(str.charAt(index) - '0');
+                }else{
+                    landscape[count][i] = 0;//0 represent space
+                }
+
+            }
+            while (i < col){
+                landscape[count][i] = 0;
+                i++;
+            }
+            count++;
+        }
+
+        //input tiles
+        String til_str1 = til.readLine();
+        til_str = til_str1.substring(1,til_str1.length() - 1);
+
+
+
+        String[] input_til = til_str.split(",");
+        for (int i = 0; i < input_til.length; i++){
+            if (i == 0){
+                String[] tmp = input_til[i].split("=");
+                tiles.put(tmp[0], Integer.valueOf(tmp[1]));
+            }else{
+                String s2 = input_til[i].substring(1);
+                String[] tmp = s2.split("=");
+                tiles.put(tmp[0], Integer.valueOf(tmp[1]));
+            }
+
+        }
+
+        //input targets
+        LinkedList<String> tar_list = new LinkedList<>();
+        while ((tar_str = tar.readLine()) != null){
+            tar_list.add(tar_str);//get each of rows
+        }
+        for (String str : tar_list){
+            String[] tmp = str.split(":");
+            targets.put(Integer.valueOf(tmp[0]), Integer.valueOf(tmp[1]));
+        }
+
+
+
+        boolean assignment = Main.generate_variables_domain(landscape, tiles, targets);
+        assertEquals(true, assignment);
+    }
+
+
 }
