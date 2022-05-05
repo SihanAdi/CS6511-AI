@@ -25,6 +25,8 @@ public class Logic {
     private boolean is_ai_win;
     static int ai_move_row;
     static int ai_move_colmn;
+    static int X_num;
+    static int O_num;
     public Logic(int gameId, int boardSize, int target, String selfSymbol, String oppoSymbol) throws Exception {
         this.requests = new Requests();
         this.gameid = gameId;
@@ -32,6 +34,8 @@ public class Logic {
         this.boardSize = boardSize;
         this.selfSymbol = selfSymbol;
         this.oppoSymbol = oppoSymbol;
+        this.X_num = 0;
+        this.O_num = 0;
         this.board = new String[boardSize][boardSize];
         initBoard();
 
@@ -138,16 +142,21 @@ public class Logic {
     }
     public void best_move(String[][] Tic_Tac_Toe, int n, int m, HashMap<String, Integer> map) throws Exception {
         int max_score = Integer.MIN_VALUE;
-
+        int max_num = 0;
         for (int i = 0; i < n; i++){
             for (int j = 0; j < n; j++){
                 if (Tic_Tac_Toe[i][j] == ""){
                     Tic_Tac_Toe[i][j] = this.selfSymbol;
                     int alpha = Integer.MIN_VALUE;
                     int beta = Integer.MAX_VALUE;
-                    int score = Alpha_beta_search(Tic_Tac_Toe, n, m, map, false, alpha, beta);
+                    int score = Alpha_beta_search(0, Tic_Tac_Toe, n, m, map, false, alpha, beta);
                     Tic_Tac_Toe[i][j] = "";
                     if (score > max_score){
+                        max_score = score;
+                        ai_move_row = i;
+                        ai_move_colmn = j;
+                    }
+                    if (X_num >= max_num && score > max_score){
                         max_score = score;
                         ai_move_row = i;
                         ai_move_colmn = j;
@@ -232,10 +241,13 @@ public class Logic {
         }
     }
 
-    public int Alpha_beta_search(String[][] Tic_Tac_Toe, int n, int m, HashMap<String, Integer> map, boolean is_max, int alpha, int beta){
+    public int Alpha_beta_search(int depth, String[][] Tic_Tac_Toe, int n, int m, HashMap<String, Integer> map, boolean is_max, int alpha, int beta){
         String str = result(Tic_Tac_Toe, n, m);
         if (str != ""){
             return map.get(str);
+        }
+        if(depth == 4){
+            return heuristic(Tic_Tac_Toe, n);
         }
         if (is_max){
             int max = Integer.MIN_VALUE;
@@ -243,7 +255,7 @@ public class Logic {
                 for (int j = 0; j < n; j++){
                     if (Tic_Tac_Toe[i][j] == ""){
                         Tic_Tac_Toe[i][j] = this.selfSymbol;
-                        int score = Alpha_beta_search(Tic_Tac_Toe, n, m, map, false, alpha, beta);
+                        int score = Alpha_beta_search(depth+1, Tic_Tac_Toe, n, m, map, false, alpha, beta);
                         Tic_Tac_Toe[i][j] = "";
                         max = Math.max(max, score);
                         if (max >= beta){
@@ -259,8 +271,8 @@ public class Logic {
             for (int i = 0; i < n; i++){
                 for (int j = 0; j < n; j++){
                     if (Tic_Tac_Toe[i][j] == ""){
-                        Tic_Tac_Toe[i][j] = "O";
-                        int score = Alpha_beta_search(Tic_Tac_Toe, n, m, map, true, alpha, beta);
+                        Tic_Tac_Toe[i][j] = this.oppoSymbol;
+                        int score = Alpha_beta_search(depth+1, Tic_Tac_Toe, n, m, map, true, alpha, beta);
                         Tic_Tac_Toe[i][j] = "";
                         max = Math.min(max, score);
                         if (max <= alpha){
@@ -283,8 +295,19 @@ public class Logic {
         }
         return true;
     }
-    public String result(String[][] Tic_Tac_Toe, int n, int m){
 
+    public static int heuristic(String[][] Tic_Tac_Toe, int n){
+        int reward = Math.max(X_num, O_num);
+        if (X_num > O_num){
+            return reward;
+        }else {
+            return -reward;
+        }
+    }
+
+    public String result(String[][] Tic_Tac_Toe, int n, int m){
+        X_num = 0;
+        O_num = 0;
         for (int i = 0; i < n; i++){
             for (int j = 0; j < n; j++){
                 if (Tic_Tac_Toe[i][j].equals(this.selfSymbol) && check_X_result(Tic_Tac_Toe, i, j, n, m)){
@@ -302,6 +325,7 @@ public class Logic {
     }
     public boolean check_X_result(String[][] Tic_Tac_Toe, int i, int j, int n, int m){
         //check row
+
         int front = j;
         int behind = j;
         int front_num = 0;
@@ -314,12 +338,13 @@ public class Logic {
             }
         }
         for (int c = j; c >= 0; c--){
-            if(Tic_Tac_Toe[i][c].equals(this.oppoSymbol)){
+            if(Tic_Tac_Toe[i][c].equals(this.selfSymbol)){
                 behind_num++;
             }else{
                 break;
             }
         }
+        X_num = front_num + behind_num - 1;
         if (front_num == 0 || behind_num == 0){
             if (front_num >= m || behind_num >= m){
 
@@ -345,12 +370,13 @@ public class Logic {
             }
         }
         for (int r = i; r >= 0; r--){
-            if(Tic_Tac_Toe[r][j].equals(this.oppoSymbol)){
+            if(Tic_Tac_Toe[r][j].equals(this.selfSymbol)){
                 up_num++;
             }else{
                 break;
             }
         }
+        X_num = Math.max(X_num, (up_num + down_num - 1));
         if (up_num == 0 || down_num == 0){
             if (up_num >= m || down_num >= m){
 
@@ -358,6 +384,7 @@ public class Logic {
             }
         }else{
             if ((up_num + down_num - 1) >= m){
+
                 return true;
             }
         }
@@ -381,7 +408,7 @@ public class Logic {
         r = i;
         c = j;
         while (r >= 0 && c >= 0){
-            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+            if (Tic_Tac_Toe[r][c].equals(this.selfSymbol)){
                 up_diagonal_num++;
             }else{
                 break;
@@ -389,20 +416,122 @@ public class Logic {
             r--;
             c--;
         }
+        X_num = Math.max(X_num, (up_diagonal_num + down_diagonal_num - 1));
         if (up_diagonal_num == 0 || down_diagonal_num == 0){
             if (up_diagonal_num >= m || down_diagonal_num >= m){
                 return true;
             }
         }else{
             if ((up_diagonal_num + down_diagonal_num - 1) >= m){
+
                 return true;
             }
         }
 
         return false;
+
+//        int front = j;
+//        int behind = j;
+//        int front_num = 0;
+//        int behind_num = 0;
+//        for (int c = j; c < n; c++){
+//            if(Tic_Tac_Toe[i][c].equals(this.selfSymbol)){
+//                front_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        for (int c = j; c >= 0; c--){
+//            if(Tic_Tac_Toe[i][c].equals(this.oppoSymbol)){
+//                behind_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        if (front_num == 0 || behind_num == 0){
+//            if (front_num >= m || behind_num >= m){
+//
+//                return true;
+//            }
+//        }else{
+//            if ((front_num + behind_num - 1) >= m){
+//
+//                return true;
+//            }
+//        }
+//
+//        //check column
+//        int up = i;
+//        int down = i;
+//        int up_num = 0;
+//        int down_num = 0;
+//        for (int r = i; r < n; r++){
+//            if(Tic_Tac_Toe[r][j].equals(this.selfSymbol)){
+//                down_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        for (int r = i; r >= 0; r--){
+//            if(Tic_Tac_Toe[r][j].equals(this.oppoSymbol)){
+//                up_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        if (up_num == 0 || down_num == 0){
+//            if (up_num >= m || down_num >= m){
+//
+//                return true;
+//            }
+//        }else{
+//            if ((up_num + down_num - 1) >= m){
+//                return true;
+//            }
+//        }
+//
+//        //check diagonal
+//        int up_diagonal = i;
+//        int down_diagonal = i;
+//        int up_diagonal_num = 0;
+//        int down_diagonal_num = 0;
+//        int r = i;
+//        int c = j;
+//        while (r < n && c < n){
+//            if (Tic_Tac_Toe[r][c].equals(this.selfSymbol)){
+//                down_diagonal_num++;
+//            }else{
+//                break;
+//            }
+//            r++;
+//            c++;
+//        }
+//        r = i;
+//        c = j;
+//        while (r >= 0 && c >= 0){
+//            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+//                up_diagonal_num++;
+//            }else{
+//                break;
+//            }
+//            r--;
+//            c--;
+//        }
+//        if (up_diagonal_num == 0 || down_diagonal_num == 0){
+//            if (up_diagonal_num >= m || down_diagonal_num >= m){
+//                return true;
+//            }
+//        }else{
+//            if ((up_diagonal_num + down_diagonal_num - 1) >= m){
+//                return true;
+//            }
+//        }
+//
+//        return false;
     }
     public boolean check_O_result(String[][] Tic_Tac_Toe, int i, int j, int n, int m){
         //check row
+
         int front = j;
         int behind = j;
         int front_num = 0;
@@ -421,12 +550,14 @@ public class Logic {
                 break;
             }
         }
+        O_num = Math.max(O_num, (front_num + behind_num - 1));
         if (front_num == 0 || behind_num == 0){
             if (front_num >= m || behind_num >= m){
                 return true;
             }
         }else{
             if ((front_num + behind_num - 1) >= m){
+
                 return true;
             }
         }
@@ -450,12 +581,14 @@ public class Logic {
                 break;
             }
         }
+        O_num = Math.max(O_num, (up_num + down_num - 1));
         if (up_num == 0 || down_num == 0){
             if (up_num >= m || down_num >= m){
                 return true;
             }
         }else{
             if ((up_num + down_num - 1) >= m){
+
                 return true;
             }
         }
@@ -487,17 +620,152 @@ public class Logic {
             r--;
             c--;
         }
+        O_num = Math.max(O_num, (up_diagonal_num + down_diagonal_num - 1));
         if (up_diagonal_num == 0 || down_diagonal_num == 0){
             if (up_diagonal_num >= m || down_diagonal_num >= m){
                 return true;
             }
         }else{
             if ((up_diagonal_num + down_diagonal_num - 1) >= m){
+
                 return true;
             }
         }
 
+        int up_diagonal_num1 = 0;
+        int down_diagonal_num1 = 0;
+        r = i;
+        c = j;
+        while (r < n && c >= 0){
+            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+                down_diagonal_num1++;
+            }else{
+                break;
+            }
+            r++;
+            c--;
+        }
+
+        r = i;
+        c = j;
+        while (r >= 0 && c < n){
+            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+                up_diagonal_num1++;
+            }else{
+                break;
+            }
+            r--;
+            c++;
+        }
+        O_num = Math.max(O_num, (up_diagonal_num1 + down_diagonal_num1 - 1));
+        if (up_diagonal_num1 == 0 || down_diagonal_num1 == 0){
+            if (up_diagonal_num1 >= m || down_diagonal_num1 >= m){
+
+                return true;
+            }
+        }else{
+            if ((up_diagonal_num1 + down_diagonal_num1 - 1) >= m){
+
+                return true;
+            }
+        }
         return false;
+
+//        int front = j;
+//        int behind = j;
+//        int front_num = 0;
+//        int behind_num = 0;
+//        for (int c = j; c < n; c++){
+//            if(Tic_Tac_Toe[i][c].equals(this.oppoSymbol)){
+//                front_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        for (int c = j; c >= 0; c--){
+//            if(Tic_Tac_Toe[i][c].equals(this.oppoSymbol)){
+//                behind_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        if (front_num == 0 || behind_num == 0){
+//            if (front_num >= m || behind_num >= m){
+//                return true;
+//            }
+//        }else{
+//            if ((front_num + behind_num - 1) >= m){
+//                return true;
+//            }
+//        }
+//
+//        //check column
+//        int up = i;
+//        int down = i;
+//        int up_num = 0;
+//        int down_num = 0;
+//        for (int r = i; r < n; r++){
+//            if(Tic_Tac_Toe[r][j].equals(this.oppoSymbol)){
+//                down_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        for (int r = i; r >= 0; r--){
+//            if(Tic_Tac_Toe[r][j].equals(this.oppoSymbol)){
+//                up_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        if (up_num == 0 || down_num == 0){
+//            if (up_num >= m || down_num >= m){
+//                return true;
+//            }
+//        }else{
+//            if ((up_num + down_num - 1) >= m){
+//                return true;
+//            }
+//        }
+//
+//        //check diagonal
+//        int up_diagonal = i;
+//        int down_diagonal = i;
+//        int up_diagonal_num = 0;
+//        int down_diagonal_num = 0;
+//        int r = i;
+//        int c = j;
+//        while (r < n && c < n){
+//            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+//                down_diagonal_num++;
+//            }else{
+//                break;
+//            }
+//            r++;
+//            c++;
+//        }
+//        r = i;
+//        c = j;
+//        while (r >= 0 && c >= 0){
+//            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+//                up_diagonal_num++;
+//            }else{
+//                break;
+//            }
+//            r--;
+//            c--;
+//        }
+//        if (up_diagonal_num == 0 || down_diagonal_num == 0){
+//            if (up_diagonal_num >= m || down_diagonal_num >= m){
+//                return true;
+//            }
+//        }else{
+//            if ((up_diagonal_num + down_diagonal_num - 1) >= m){
+//                return true;
+//            }
+//        }
+//
+//        return false;
     }
 
     public boolean check(String[][] Tic_Tac_Toe, int n, int m){
@@ -616,9 +884,47 @@ public class Logic {
             }
         }
 
+        int up_diagonal_num1 = 0;
+        int down_diagonal_num1 = 0;
+        r = i;
+        c = j;
+        while (r < n && c >= 0){
+            if (Tic_Tac_Toe[r][c].equals(this.selfSymbol)){
+                down_diagonal_num1++;
+            }else{
+                break;
+            }
+            r++;
+            c--;
+        }
+
+        r = i;
+        c = j;
+        while (r >= 0 && c < n){
+            if (Tic_Tac_Toe[r][c].equals(this.selfSymbol)){
+                up_diagonal_num1++;
+            }else{
+                break;
+            }
+            r--;
+            c++;
+        }
+        if (up_diagonal_num1 == 0 || down_diagonal_num1 == 0){
+            if (up_diagonal_num1 >= m || down_diagonal_num1 >= m){
+                is_ai_win = true;
+                return true;
+            }
+        }else{
+            if ((up_diagonal_num1 + down_diagonal_num1 - 1) >= m){
+                is_ai_win = true;
+                return true;
+            }
+        }
+
         return false;
     }
     public boolean check_O(String[][] Tic_Tac_Toe, int i, int j, int n, int m){
+
         //check row
         int front = j;
         int behind = j;
@@ -720,7 +1026,145 @@ public class Logic {
             }
         }
 
+        int up_diagonal_num1 = 0;
+        int down_diagonal_num1 = 0;
+        r = i;
+        c = j;
+        while (r < n && c >= 0){
+            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+                down_diagonal_num1++;
+            }else{
+                break;
+            }
+            r++;
+            c--;
+        }
+
+        r = i;
+        c = j;
+        while (r >= 0 && c < n){
+            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+                up_diagonal_num1++;
+            }else{
+                break;
+            }
+            r--;
+            c++;
+        }
+        if (up_diagonal_num1 == 0 || down_diagonal_num1 == 0){
+            if (up_diagonal_num1 >= m || down_diagonal_num1 >= m){
+                is_player_win = true;
+                return true;
+            }
+        }else{
+            if ((up_diagonal_num1 + down_diagonal_num1 - 1) >= m){
+                is_player_win = true;
+                return true;
+            }
+        }
+
         return false;
     }
 
+//        int front = j;
+//        int behind = j;
+//        int front_num = 0;
+//        int behind_num = 0;
+//        for (int c = j; c < n; c++){
+//            if(Tic_Tac_Toe[i][c].equals(this.oppoSymbol)){
+//                front_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        for (int c = j; c >= 0; c--){
+//            if(Tic_Tac_Toe[i][c].equals(this.oppoSymbol)){
+//                behind_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        if (front_num == 0 || behind_num == 0){
+//            if (front_num >= m || behind_num >= m){
+//                is_player_win = true;
+//                return true;
+//            }
+//        }else{
+//            if ((front_num + behind_num - 1) >= m){
+//                is_player_win = true;
+//                return true;
+//            }
+//        }
+//
+//        //check column
+//        int up = i;
+//        int down = i;
+//        int up_num = 0;
+//        int down_num = 0;
+//        for (int r = i; r < n; r++){
+//            if(Tic_Tac_Toe[r][j].equals(this.oppoSymbol)){
+//                down_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        for (int r = i; r >= 0; r--){
+//            if(Tic_Tac_Toe[r][j].equals(this.oppoSymbol)){
+//                up_num++;
+//            }else{
+//                break;
+//            }
+//        }
+//        if (up_num == 0 || down_num == 0){
+//            if (up_num >= m || down_num >= m){
+//                is_player_win = true;
+//                return true;
+//            }
+//        }else{
+//            if ((up_num + down_num - 1) >= m){
+//                is_player_win = true;
+//                return true;
+//            }
+//        }
+//
+//        //check diagonal
+//        int up_diagonal = i;
+//        int down_diagonal = i;
+//        int up_diagonal_num = 0;
+//        int down_diagonal_num = 0;
+//        int r = i;
+//        int c = j;
+//        while (r < n && c < n){
+//            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+//                down_diagonal_num++;
+//            }else{
+//                break;
+//            }
+//            r++;
+//            c++;
+//        }
+//        r = i;
+//        c = j;
+//        while (r >= 0 && c >= 0){
+//            if (Tic_Tac_Toe[r][c].equals(this.oppoSymbol)){
+//                up_diagonal_num++;
+//            }else{
+//                break;
+//            }
+//            r--;
+//            c--;
+//        }
+//        if (up_diagonal_num == 0 || down_diagonal_num == 0){
+//            if (up_diagonal_num >= m || down_diagonal_num >= m){
+//                is_player_win = true;
+//                return true;
+//            }
+//        }else{
+//            if ((up_diagonal_num + down_diagonal_num - 1) >= m){
+//                is_player_win = true;
+//                return true;
+//            }
+//        }
+//
+//        return false;
 }
